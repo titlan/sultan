@@ -61,3 +61,15 @@ Después, en el menú de ADMRufu:
 
 OpenVPN, Squid, SlowDNS, WebSocket proxy, limitador, etc. siguen
 en su versión 2022. Si quieres, se actualizan aparte.
+
+## WebSocket (actualizado 2026-11-12)
+
+| Archivo | Cambio |
+|---|---|
+| `install/WS-Proxy.js` | Reescrito para Node 18/20/22: variables declaradas, puertos con parseInt, manejo de errores en ambos lados, timeout 5 min, log con fecha. Misma conducta: responde HTTP 101 y reenvia al destino. Probado localmente: banner 101 + eco reenviado. |
+| `install/ws-cdn.sh` | Deteccion de Node arreglada (antes `which nodejs` con variable sin definir), instala nodejs si falta, `systemctl daemon-reload`, verifica que el servicio quedo active, corrige el bug de `stop_ws()` que desactivaba el servicio equivocado. Ahora puede redirigir a SSH 22, Dropbear o Xray 8443, no solo Dropbear. |
+| `menu_inst.sh` | `[5] OVER WEBSOCKET` ahora lee su estado del servicio `nodews.*` con systemctl. Antes lo leia del nombre del proceso node y casi siempre quedaba en [OFF] aunque estuviera corriendo. |
+
+Uso: menu principal -> `3 PREPARACION DEL SISTEMA` -> `[5] OVER WEBSOCKET` -> `1 INICIAR/AGREGAR PROXY WS CDN`. Elige el puerto a redirigir y el puerto WS, y queda el servicio `nodews.<puerto>`.
+
+Nota: los proxies SOCKS en Python (`PDirect.py` etc.) son Python 2 y NO se actualizaron en esta ronda.
