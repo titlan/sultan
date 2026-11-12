@@ -1,9 +1,0 @@
-# Archivos locales que nunca se suben
-.DS_Store
-.idea/
-.vscode/
-*.log
-.env
-.env.*
-*.token
-secrets/
