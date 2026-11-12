@@ -1,47 +1,9 @@
-# macOS
+# Archivos locales que nunca se suben
 .DS_Store
-._*
-
-# IDE
 .idea/
 .vscode/
-*.swp
-*.swo
-
-# Claude Code
-.claude/
-
-# Local build artifacts (extracted copy of the released archive)
-/XHTTP-Installer/
-XHTTP-Installer.zip
-
-# Logs
 *.log
-/tmp/
-
-# Node
-node_modules/
-package-lock.json
-
-# Secrets / tokens (must NEVER be committed)
 .env
 .env.*
 *.token
 secrets/
-
-# Vercel / Netlify local state
-.vercel/
-.netlify/
-
-# Panel build artifacts
-panel/dist/
-panel/data/
-panel/release/
-panel/frontend/out/
-panel/frontend/.next/
-
-# Graphify output
-graphify-out/
-
-# Fastly build copy
-fastly copy/
