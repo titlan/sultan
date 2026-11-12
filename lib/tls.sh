@@ -17,11 +17,15 @@ tls_acme_installed() {
 tls_install_acme() {
     if tls_acme_installed; then return 0; fi
     require_cmd curl
-    local tmp
-    tmp="$(mk_tmp_file)"
+    # FIX (sultan): acme.sh 3.x sin --install solo muestra la ayuda y sale 1,
+    # y con --install busca un archivo llamado 'acme.sh' en el directorio actual.
+    # Por eso se descarga como <tmp>/acme.sh y se corre con cd a ese directorio.
+    local tmp_dir tmp
+    tmp_dir="$(mk_tmp_dir)"
+    tmp="${tmp_dir}/acme.sh"
     safe_curl "$VLESS_ACME_INSTALL_URL" "$tmp" || die "failed to download acme.sh installer"
     mkdir -p "$VLESS_ACME_HOME"
-    HOME="$VLESS_VAR" sh "$tmp" --home "$VLESS_ACME_HOME" --nocron --accountemail "admin@${1:-example.invalid}" \
+    (cd "$tmp_dir" && HOME="$VLESS_VAR" sh acme.sh --install --home "$VLESS_ACME_HOME" --nocron --accountemail "admin@${1:-example.invalid}") \
         >/dev/null 2>&1 || die "acme.sh installation failed"
     tls_acme_installed || die "acme.sh installation reported success but binary is missing"
 }
