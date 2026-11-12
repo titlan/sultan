@@ -99,7 +99,17 @@ xray_install_version() {
 xray_config_test() {
     local config="$1"
     [[ -x "$VLESS_XRAY_BIN" ]] || die "xray binary not found at $VLESS_XRAY_BIN"
-    "$VLESS_XRAY_BIN" run -test -format json -config "$config" >/tmp/vless-xray-test.log 2>&1
+    # FIX (sultan): Xray 26.11.9 rechaza archivos de config sin extension
+    # .json ("unsupported config file extension") aunque se pase
+    # -format json. Los candidatos se crean con mk_tmp_file, sin extension,
+    # asi que se copian a un .json temporal antes de probar.
+    local test_config="$config"
+    if [[ "$config" != *.json ]]; then
+        test_config="$(mk_tmp_file).json"
+        cp -f "$config" "$test_config"
+        VLESS_TMP_PATHS+=("$test_config")
+    fi
+    "$VLESS_XRAY_BIN" run -test -format json -config "$test_config" >/tmp/vless-xray-test.log 2>&1
     local rc=$?
     if [[ $rc -ne 0 ]]; then
         log_error "Xray config validation failed:"
