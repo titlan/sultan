@@ -437,7 +437,7 @@ info_sys(){
 
 cabesera(){
 	msg -bar
-	print_center -azu "=====>>>> ADMRufu <<<<====="|lolcat
+	print_center -azu "=====>>>> Muse IA <<<<====="|lolcat
 	msg -bar
 }
 
