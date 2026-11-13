@@ -291,6 +291,11 @@ pid_inst(){
   else
     inst[nodews]="\033[1;31m[OFF]"
   fi
+  if systemctl is-active --quiet checkuser 2>/dev/null; then
+    inst[checkuser]="\033[1;32m[ON] "
+  else
+    inst[checkuser]="\033[1;31m[OFF]"
+  fi
   v_node="node"
   proto="dropbear python stunnel4 v2ray $v_node badvpn squid openvpn dns-serve"
   portas=$(lsof -V -i -P -n | grep -v "ESTABLISHED" |grep -v "COMMAND")
@@ -336,10 +341,11 @@ echo -ne "$(msg -verd " [15]")$(msg -verm2 ">") $(msg -azu "ADMIN PORTS ACTIVOS"
 echo -e "$(msg -verd " [16]")$(msg -verm2 ">") $(msg -azu "GEN DOMI/CERT-SSL") $([[ -z $(ls "${ADM_crt}") ]] && echo -e "\033[1;31m○ " || echo -e "\033[1;32m◉ ")"
 msg -bar
 echo -e "$(msg -verd " [21]") $(msg -verm2 ">") $(msg -azu "HERRAMIENTAS y EXTRAS")"
+echo -e "$(msg -verd " [23]") $(msg -verm2 ">") $(msg -azu "CHECKUSER       ${inst[checkuser]}")"
 msg -bar
 echo -ne "$(msg -verd "  [0]") $(msg -verm2 ">") " && msg -bra "   \033[1;41m VOLVER \033[0m $(msg -verd "       [22]") $(msg -verm2 ">") $(msg -azu AUTO-INICIAR) ${AutoRun}" 
 msg -bar
-selection=$(selection_fun 22)
+selection=$(selection_fun 23)
 case $selection in
   0)return 0;;
   1)${ADM_inst}/dropbear.sh;;
@@ -365,6 +371,7 @@ case $selection in
   20)conf_menu;;
   21)${ADMRufu}/tool_extras.sh;;
   22)fun_autorun;;
+  23)${ADM_inst}/checkuser.sh;;
 esac
 }
 

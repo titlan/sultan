@@ -100,12 +100,12 @@ echo "ADMRufu original en $ADMRUFU_DIR, version: $(cat $ADMRUFU_DIR/vercion 2>/d
 
 echo "--- Aplicando archivos actualizados de titlan/sultan ---"
 # 7 archivos actualizados + menu_inst.sh, todos de este mismo repo
-for f in install/v2ray.sh install/userV2ray.sh install/userSSH install/dropbear.sh install/ssl.sh install/ws-cdn.sh install/WS-Proxy.js menu_inst.sh menu; do
+for f in install/v2ray.sh install/userV2ray.sh install/userSSH install/dropbear.sh install/ssl.sh install/ws-cdn.sh install/WS-Proxy.js install/checkuser.sh install/checkuser.py install/checkuser.service menu_inst.sh menu; do
   echo "  $f"
   wget -q "$SULTAN_RAW/$f" -O "$ADMRUFU_DIR/$f"
 done
 chmod +x "$ADMRUFU_DIR/menu"
-chmod +x "$ADMRUFU_DIR/install/v2ray.sh" "$ADMRUFU_DIR/install/userV2ray.sh" "$ADMRUFU_DIR/install/userSSH" "$ADMRUFU_DIR/install/dropbear.sh" "$ADMRUFU_DIR/install/ssl.sh" "$ADMRUFU_DIR/install/ws-cdn.sh" "$ADMRUFU_DIR/menu_inst.sh"
+chmod +x "$ADMRUFU_DIR/install/v2ray.sh" "$ADMRUFU_DIR/install/userV2ray.sh" "$ADMRUFU_DIR/install/userSSH" "$ADMRUFU_DIR/install/dropbear.sh" "$ADMRUFU_DIR/install/ssl.sh" "$ADMRUFU_DIR/install/ws-cdn.sh" "$ADMRUFU_DIR/install/checkuser.sh" "$ADMRUFU_DIR/menu_inst.sh"
 # dns-server binario: viene en el tar original, dejarlo ejecutable
 chmod +x "$ADMRUFU_DIR/install/dns-server" 2>/dev/null || true
 
@@ -116,7 +116,7 @@ if grep -q '/etc/v2ray/config.json' "$ADMRUFU_DIR/menu"; then
 fi
 
 echo "--- Verificando archivos actualizados ---"
-for f in install/v2ray.sh install/userV2ray.sh install/userSSH install/dropbear.sh install/ssl.sh install/ws-cdn.sh menu_inst.sh menu; do
+for f in install/v2ray.sh install/userV2ray.sh install/userSSH install/dropbear.sh install/ssl.sh install/ws-cdn.sh install/checkuser.sh menu_inst.sh menu; do
   bash -n "$ADMRUFU_DIR/$f" && echo "OK $f"
 done
 node --check "$ADMRUFU_DIR/install/WS-Proxy.js" && echo "OK install/WS-Proxy.js"
