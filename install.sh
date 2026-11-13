@@ -48,6 +48,21 @@ echo "--- Zona horaria: America/Mexico_City ---"
 timedatectl set-timezone America/Mexico_City 2>/dev/null || ln -sf /usr/share/zoneinfo/America/Mexico_City /etc/localtime
 echo "Fecha/hora ahora: $(date '+%d/%m/%Y %H:%M:%S %Z')"
 
+echo "--- SSH: activar login con contrasena (AWS/Lightsail lo trae en no) ---"
+# Las imagenes Ubuntu de AWS/Lightsail traen PasswordAuthentication no en
+# /etc/ssh/sshd_config.d/60-cloudimg-settings.conf, y en sshd_config gana el
+# PRIMER valor, asi que un archivo 60/99 con 'yes' despues no sirve: hay que
+# editar el archivo que gana. Sin esto, los usuarios SSH del menu no pueden
+# entrar con contrasena (ni HTTP Injector/Custom) aunque la contrasena este bien.
+if [[ -f /etc/ssh/sshd_config.d/60-cloudimg-settings.conf ]]; then
+  sed -i 's/^PasswordAuthentication no/PasswordAuthentication yes/' /etc/ssh/sshd_config.d/60-cloudimg-settings.conf
+fi
+sed -i 's/^PasswordAuthentication no/PasswordAuthentication yes/' /etc/ssh/sshd_config 2>/dev/null || true
+# Por si no existe ninguna linea, dejar una que cargue primero.
+echo "PasswordAuthentication yes" > /etc/ssh/sshd_config.d/00-password-auth.conf
+systemctl restart ssh 2>/dev/null || systemctl restart sshd 2>/dev/null || true
+sshd -T 2>/dev/null | grep -i passwordauthentication || echo "No se pudo verificar sshd -T"
+
 echo "--- Instalando dependencias ---"
 export DEBIAN_FRONTEND=noninteractive
 apt-get update -y
