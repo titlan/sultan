@@ -1,75 +1,53 @@
-# ADMRufu — actualizado solo V2Ray y SSH (2026-11-12)
+# ADMRufu actualizado — titlan/sultan
 
-Actualización del ADMRufu original (versión 2022-04-11, @Rufu99,
-bajado de `NetVPS/Multi-Script/main/R9/ADMRufu.tar.xz`).
-**Solo se tocaron V2Ray y SSH.** El resto del panel queda igual.
+ADMRufu original (2022-04-11, @Rufu99) + archivos actualizados por Muse para David.
 
-## Qué estaba roto
-
-### V2Ray — roto, no instalaba
-- `ins_v2r()` hacía `source <(curl ... rudi9999/ADMRufu/main/Utils/v2ray/v2ray.sh)` —
-  esa URL hoy da **404**.
-- `removeV2Ray()` usaba `multi.netlify.app/go.sh` y `pip uninstall v2ray_util`
-  (multi-v2ray, abandonado).
-- El config era `/etc/v2ray/config.json`, ruta vieja. El V2Ray/Xray actual
-  usa `/usr/local/etc/xray/config.json` y el servicio `xray`.
-- `port()`, `address()`, `host()`, `path()` hacían
-  `jq ... < $temp >> $config` — append, duplicaba el JSON y lo rompía.
-- `newuser()` en `userV2ray.sh` usaba `$users` sin definirlo, y la fecha
-  era `date '+%y-%m-%d'` (año de 2 dígitos), lo que rompía el cálculo
-  de días restantes.
-
-### SSH — funcionaba, pero con cosas viejas
-- `add_user()` tenía una rama para Ubuntu 16 con `openssl passwd -1` (MD5).
-- Usaba `service ssh/dropbear/stunnel4 restart` en lugar de `systemctl`.
-
-## Qué se cambió
-
-| Archivo | Cambio |
-|---|---|
-| `install/v2ray.sh` | Instala **Xray-core oficial** (XTLS/Xray-install), mismo protocolo VMess. Config `/usr/local/etc/xray/config.json`, puerto 8443, WS path `/v2ray`. `restart()` con `systemctl restart xray`. `removeV2Ray()` con desinstalador oficial. `alterId` se fija en 0 (obsoleto). `v2ray_tls()` usa cert de `/etc/ADMRufu/source/cert` si existe. |
-| `install/userV2ray.sh` | Fecha `+%Y-%m-%d`. `newuser()` calcula el total de clientes antes de agregar. UUID con `uuidgen` o `/proc/sys/kernel/random/uuid`. Link vmess con los campos reales del config nuevo. |
-| `install/userSSH` | Siempre `openssl passwd -6` (SHA512). `service` → `systemctl` con fallback. Fecha de creación con año de 4 dígitos. |
-| `install/dropbear.sh` | `systemctl` en lugar de `service`. |
-| `install/ssl.sh` | `systemctl` para stunnel4. El cert autofirmado sigue siendo solo para pruebas. |
-
-Los archivos `.orig` son los originales de 2022, para comparar.
-
-## Cómo instalarlo en el VPS
+## Instalador completo desde cero (maquina limpia)
 
 ```bash
-# Sube esta carpeta al VPS, por ejemplo a /root/admrufu-actualizado/
+curl -fsSL https://raw.githubusercontent.com/titlan/sultan/main/install.sh | sudo bash
+```
+
+O:
+
+```bash
+wget -qO install.sh https://raw.githubusercontent.com/titlan/sultan/main/install.sh
+sudo bash install.sh
+```
+
+El `install.sh`:
+1. Instala dependencias (curl, wget, xz-utils, jq, lsof, screen, figlet, lolcat, nodejs, uuid-runtime).
+2. Descarga el ADMRufu original desde `NetVPS/Multi-Script` (`R9/ADMRufu.tar.xz`, sha256 verificado) y lo extrae en `/etc/ADMRufu`.
+3. Encima pone los archivos actualizados de este repo y parchea el menu para Xray.
+4. Crea los comandos `menu`, `adm` y `ADMRufu`.
+
+Despues: escribe `menu` y ve a `3 PREPARACION DEL SISTEMA -> 4 V2RAY` para instalar Xray.
+
+> El binario `install/dns-server` (ELF Go, SlowDNS) viene en el tar original de NetVPS, no se sube a este repo porque GitHub no acepta binarios en push-files. Si NetVPS borra ese tar, el instalador fallara en el paso 2.
+
+## Actualizar un ADMRufu ya instalado
+
+```bash
 sudo bash instalar-actualizacion.sh
 ```
 
-Hace backup en `/root/admrufu-backup-YYYYMMDD-HHMM/`, copia los 5 archivos
-a `/etc/ADMRufu/install/`, y parchea `/etc/ADMRufu/menu` para que
-`$config` apunte a `/usr/local/etc/xray/config.json`.
+Hace backup en `/root/admrufu-backup-YYYYMMDD-HHMM/` y copia los archivos nuevos a `/etc/ADMRufu/install/` y `/etc/ADMRufu/menu_inst.sh`.
 
-Después, en el menú de ADMRufu:
-1. Instala Xray desde el menú V2Ray (opción INSTALL).
-2. Crea usuarios V2Ray como antes — el link `vmess://` sale igual.
-3. SSH sigue igual.
-
-## Verificado
-
-- `bash -n` OK en los 5 archivos actualizados.
-- Lógica `jq` probada con un config de ejemplo: cambio de puerto
-  8443 → 8444 y agregar un usuario en el índice correcto funcionan.
-
-## No tocado
-
-OpenVPN, Squid, SlowDNS, WebSocket proxy, limitador, etc. siguen
-en su versión 2022. Si quieres, se actualizan aparte.
-
-## WebSocket (actualizado 2026-11-12)
+## Que se actualizo
 
 | Archivo | Cambio |
 |---|---|
-| `install/WS-Proxy.js` | Reescrito para Node 18/20/22: variables declaradas, puertos con parseInt, manejo de errores en ambos lados, timeout 5 min, log con fecha. Misma conducta: responde HTTP 101 y reenvia al destino. Probado localmente: banner 101 + eco reenviado. |
-| `install/ws-cdn.sh` | Deteccion de Node arreglada (antes `which nodejs` con variable sin definir), instala nodejs si falta, `systemctl daemon-reload`, verifica que el servicio quedo active, corrige el bug de `stop_ws()` que desactivaba el servicio equivocado. Ahora puede redirigir a SSH 22, Dropbear o Xray 8443, no solo Dropbear. |
-| `menu_inst.sh` | `[5] OVER WEBSOCKET` ahora lee su estado del servicio `nodews.*` con systemctl. Antes lo leia del nombre del proceso node y casi siempre quedaba en [OFF] aunque estuviera corriendo. |
+| `install/v2ray.sh` | Xray-core oficial (XTLS/Xray-install). El original bajaba de rudi9999/ADMRufu, que hoy es 404, y de multi.netlify.app. Config `/usr/local/etc/xray/config.json`, VMess+WS en 8443. |
+| `install/userV2ray.sh` | Fecha `%Y-%m-%d` (antes `%y-%m-%d` rompia el calculo de dias), conteo de clientes arreglado, alterId 0. |
+| `install/userSSH`, `install/dropbear.sh`, `install/ssl.sh` | Siempre SHA512, systemctl con fallback a service. |
+| `install/WS-Proxy.js` | Reescrito para Node 18/20/22: variables declaradas, puertos con parseInt, manejo de errores, timeout 5 min, log con fecha. Misma conducta: responde HTTP 101 y reenvia al destino. Probado: banner 101 + eco reenviado. |
+| `install/ws-cdn.sh` | Deteccion de Node arreglada, instala nodejs si falta, `systemctl daemon-reload`, verifica que el servicio quedo active, corrige el bug de `stop_ws()`. Ahora puede redirigir a SSH 22, Dropbear o Xray 8443. |
+| `menu_inst.sh` | `[5] OVER WEBSOCKET` ahora lee su estado del servicio `nodews.*` con systemctl. Antes lo leia del nombre del proceso node y casi siempre quedaba en [OFF]. |
 
-Uso: menu principal -> `3 PREPARACION DEL SISTEMA` -> `[5] OVER WEBSOCKET` -> `1 INICIAR/AGREGAR PROXY WS CDN`. Elige el puerto a redirigir y el puerto WS, y queda el servicio `nodews.<puerto>`.
+Uso del WebSocket: menu principal -> `3 PREPARACION DEL SISTEMA` -> `[5] OVER WEBSOCKET` -> `1 INICIAR/AGREGAR PROXY WS CDN`.
 
-Nota: los proxies SOCKS en Python (`PDirect.py` etc.) son Python 2 y NO se actualizaron en esta ronda.
+## Que NO se actualizo
+
+- `install/cert.sh` — generador de dominio/certificado SSL, obsoleto: la comparacion de IP usa `bc` (no viene instalado), el cert externo tiene un bug (falta `nano` para la clave), ZeroSSL ya pide EAB, y el generador de sub-dominios depende de una API key de Cloudflare del autor.
+- SlowDNS (`dns-server`, binario de 2022) y los proxies SOCKS en Python (`PDirect.py` etc., Python 2).
+- El menu principal (`menu`) solo se parchea en la ruta de config de V2Ray; el resto queda original, incluida su API key de Cloudflare.
