@@ -20,6 +20,7 @@ mkdir -p "$BACKUP"
 for f in v2ray.sh userV2ray.sh userSSH dropbear.sh ssl.sh ws-cdn.sh WS-Proxy.js; do
   [[ -e "$DST/$f" ]] && cp -a "$DST/$f" "$BACKUP/$f"
 done
+[[ -e "$ADMRUFU_DIR/menu" ]] && cp -a "$ADMRUFU_DIR/menu" "$BACKUP/menu-fixed" 2>/dev/null || true
 [[ -e "$MENU" ]] && cp -a "$MENU" "$BACKUP/menu"
 [[ -e "$MENU_INST" ]] && cp -a "$MENU_INST" "$BACKUP/menu_inst.sh"
 echo "Backup en $BACKUP"
@@ -32,6 +33,9 @@ cp -a "$SRC/install/ssl.sh" "$DST/ssl.sh"
 cp -a "$SRC/install/ws-cdn.sh" "$DST/ws-cdn.sh"
 cp -a "$SRC/install/WS-Proxy.js" "$DST/WS-Proxy.js"
 chmod +x "$DST/v2ray.sh" "$DST/userV2ray.sh" "$DST/userSSH" "$DST/dropbear.sh" "$DST/ssl.sh" "$DST/ws-cdn.sh"
+cp -a "$SRC/menu" "/etc/ADMRufu/menu"
+chmod +x "/etc/ADMRufu/menu"
+rm -f "/etc/ADMRufu/tmp/MEUIPADM"
 cp -a "$SRC/menu_inst.sh" "$MENU_INST"
 chmod +x "$MENU_INST"
 
@@ -47,6 +51,7 @@ for f in v2ray.sh userV2ray.sh userSSH dropbear.sh ssl.sh ws-cdn.sh; do
   bash -n "$DST/$f" && echo "OK $f"
 done
 bash -n "$MENU_INST" && echo "OK menu_inst.sh"
+bash -n "/etc/ADMRufu/menu" && echo "OK menu (IP/hora/lolcat arreglados)"
 node --check "$DST/WS-Proxy.js" 2>/dev/null && echo "OK WS-Proxy.js" || echo "Node no disponible aqui, WS-Proxy.js se verifica en el VPS"
 
 echo

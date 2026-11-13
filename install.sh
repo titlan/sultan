@@ -44,10 +44,30 @@ if [[ -d "$ADMRUFU_DIR" ]]; then
   cp -a "$ADMRUFU_DIR" "$BACKUP/ADMRufu"
 fi
 
+echo "--- Zona horaria: America/Mexico_City ---"
+timedatectl set-timezone America/Mexico_City 2>/dev/null || ln -sf /usr/share/zoneinfo/America/Mexico_City /etc/localtime
+echo "Fecha/hora ahora: $(date '+%d/%m/%Y %H:%M:%S %Z')"
+
 echo "--- Instalando dependencias ---"
 export DEBIAN_FRONTEND=noninteractive
 apt-get update -y
-apt-get install -y curl wget xz-utils jq lsof screen figlet lolcat nodejs python3 uuid-runtime openssl socat netcat-openbsd
+apt-get install -y software-properties-common
+add-apt-repository -y universe 2>/dev/null || true
+apt-get update -y
+apt-get install -y curl wget xz-utils jq lsof screen figlet nodejs python3 uuid-runtime openssl socat netcat-openbsd iproute2
+# lolcat: en Ubuntu 22.04 el paquete a veces no esta, y el menu fallaba
+# con 'lolcat: command not found'. Probar apt, luego gem, luego un shim.
+if ! apt-get install -y lolcat 2>/dev/null; then
+  if apt-get install -y ruby 2>/dev/null && gem install lolcat 2>/dev/null; then
+    echo "lolcat instalado con gem."
+  else
+    printf '#!/bin/sh\nexec cat\n' > /usr/local/bin/lolcat
+    chmod +x /usr/local/bin/lolcat
+    echo "lolcat no disponible, se puso un shim que solo imprime sin colores."
+  fi
+fi
+command -v lolcat >/dev/null && echo "lolcat: $(command -v lolcat)" || echo "lolcat: no disponible (el menu ya no lo necesita)"
+command -v figlet >/dev/null || apt-get install -y figlet
 
 echo "--- Descargando ADMRufu original (NetVPS, 2022-04-11) ---"
 cd /tmp
@@ -58,14 +78,18 @@ mkdir -p /etc
 tar -xf ADMRufu.tar.xz -C /etc
 rm -f ADMRufu.tar.xz
 chmod -R 755 "$ADMRUFU_DIR"
+# El tar trae /tmp/MEUIPADM con la IP vieja del autor (149.28.255.220).
+# Si no se borra, el menu muestra esa IP siempre. Borrarlo.
+rm -f "$ADMRUFU_DIR/tmp/MEUIPADM"
 echo "ADMRufu original en $ADMRUFU_DIR, version: $(cat $ADMRUFU_DIR/vercion 2>/dev/null || echo '?')"
 
 echo "--- Aplicando archivos actualizados de titlan/sultan ---"
 # 7 archivos actualizados + menu_inst.sh, todos de este mismo repo
-for f in install/v2ray.sh install/userV2ray.sh install/userSSH install/dropbear.sh install/ssl.sh install/ws-cdn.sh install/WS-Proxy.js menu_inst.sh; do
+for f in install/v2ray.sh install/userV2ray.sh install/userSSH install/dropbear.sh install/ssl.sh install/ws-cdn.sh install/WS-Proxy.js menu_inst.sh menu; do
   echo "  $f"
   wget -q "$SULTAN_RAW/$f" -O "$ADMRUFU_DIR/$f"
 done
+chmod +x "$ADMRUFU_DIR/menu"
 chmod +x "$ADMRUFU_DIR/install/v2ray.sh" "$ADMRUFU_DIR/install/userV2ray.sh" "$ADMRUFU_DIR/install/userSSH" "$ADMRUFU_DIR/install/dropbear.sh" "$ADMRUFU_DIR/install/ssl.sh" "$ADMRUFU_DIR/install/ws-cdn.sh" "$ADMRUFU_DIR/menu_inst.sh"
 # dns-server binario: viene en el tar original, dejarlo ejecutable
 chmod +x "$ADMRUFU_DIR/install/dns-server" 2>/dev/null || true
@@ -77,7 +101,7 @@ if grep -q '/etc/v2ray/config.json' "$ADMRUFU_DIR/menu"; then
 fi
 
 echo "--- Verificando archivos actualizados ---"
-for f in install/v2ray.sh install/userV2ray.sh install/userSSH install/dropbear.sh install/ssl.sh install/ws-cdn.sh menu_inst.sh; do
+for f in install/v2ray.sh install/userV2ray.sh install/userSSH install/dropbear.sh install/ssl.sh install/ws-cdn.sh menu_inst.sh menu; do
   bash -n "$ADMRUFU_DIR/$f" && echo "OK $f"
 done
 node --check "$ADMRUFU_DIR/install/WS-Proxy.js" && echo "OK install/WS-Proxy.js"

@@ -51,3 +51,9 @@ Uso del WebSocket: menu principal -> `3 PREPARACION DEL SISTEMA` -> `[5] OVER WE
 - `install/cert.sh` — generador de dominio/certificado SSL, obsoleto: la comparacion de IP usa `bc` (no viene instalado), el cert externo tiene un bug (falta `nano` para la clave), ZeroSSL ya pide EAB, y el generador de sub-dominios depende de una API key de Cloudflare del autor.
 - SlowDNS (`dns-server`, binario de 2022) y los proxies SOCKS en Python (`PDirect.py` etc., Python 2).
 - El menu principal (`menu`) solo se parchea en la ruta de config de V2Ray; el resto queda original, incluida su API key de Cloudflare.
+
+## Arreglo menu: IP, fecha/hora y lolcat (2026-11-12)
+
+- **IP mal:** el tar original trae `tmp/MEUIPADM` con la IP vieja del autor (149.28.255.220) y `fun_ip()` la devolvia siempre sin detectar nada. Ahora `fun_ip()` detecta la IP publica en cada llamada (icanhazip, ipify, ifconfig.me) y el instalador borra ese archivo viejo.
+- **Fecha/hora mal:** el VPS esta en UTC, por eso mostraba 11/13/26 00:48 en vez de 11/12 18:48. El instalador ahora pone la zona horaria en `America/Mexico_City` y el menu usa `date` fresco en formato `DD/MM/YYYY HH:MM:SS`.
+- **lolcat: command not found:** el menu lo usaba sin verificar. Ahora el instalador lo instala por apt, si no por gem, y si no pone un shim; ademas el menu ya trae un fallback a `cat` si lolcat no existe.
