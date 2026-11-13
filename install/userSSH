@@ -134,11 +134,12 @@ add_user(){
   distro=$(echo "$system"|awk '{print $1}')
   vercion=$(echo $system|awk '{print $2}'|cut -d '.' -f1)
 
-  # Actualizado 2026: siempre SHA512 (-6). El MD5 (-1) de Ubuntu 16
-  # ya no se usa y es inseguro.
-  pass=$(openssl passwd -6 "$2")
-
-  if useradd -M -s /bin/false -e ${valid} -K PASS_MAX_DAYS=$3 -p ${pass} -c $4,$2 $1 ; then
+  # Actualizado 2026-11-12: NO usar 'useradd -p $(openssl passwd -6 ...)'.
+  # El hash SHA512 trae $ ($6$salt$hash) y al pasarlo sin comillas a -p
+  # se puede romper con contrasenas con caracteres especiales ($, !, espacios).
+  # En su lugar se crea el usuario sin contrasena y se pone con chpasswd,
+  # que acepta cualquier contrasena tal cual.
+  if useradd -M -s /bin/false -e ${valid} -K PASS_MAX_DAYS=$3 -c $4,$2 $1 && echo "$1:$2" | chpasswd ; then
 
     if [[ $5 = @(s|S) ]]; then
       rm -rf /etc/openvpn/easy-rsa/pki/reqs/$1.req
@@ -346,7 +347,7 @@ Tiempo=$tmp" > ${Default}
 		fi
 	fi
 
-	useradd -M -s /bin/false -p $(openssl passwd -6 $pass) $name
+	useradd -M -s /bin/false $name && echo "$name:$pass" | chpasswd
 	#(echo $pass; echo $pass)|passwd $name 2>/dev/null
 	touch /tmp/$name
 
@@ -539,7 +540,7 @@ edit_user_fun(){
   datexp=$(date "+%F" -d " + $3 days") && valid=$(date '+%C%y-%m-%d' -d " + $3 days")
   clear
   msg -bar
-  if usermod -p $(openssl passwd -6 $2) -e $valid -c $4,$2 $1 ; then
+  if usermod -e $valid -c $4,$2 $1 && echo "$1:$2" | chpasswd ; then
   	print_center -verd "Usuario Modificado Con Exito"
   else
   	print_center -verm2 "Error, Usuario no Modificado"
